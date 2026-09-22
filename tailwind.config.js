@@ -10,9 +10,10 @@ module.exports = {
         card: "#1A1A2E",
       },
       fontFamily: {
-        sans: ["Rubik_400Regular"],
-        medium: ["Rubik_500Medium"],
-        bold: ["Rubik_700Bold"],
+        jakarta: ["PlusJakartaSans_400Regular"],
+        "jakarta-medium": ["PlusJakartaSans_500Medium"],
+        "jakarta-semibold": ["PlusJakartaSans_600SemiBold"],
+        "jakarta-bold": ["PlusJakartaSans_700Bold"],
       },
     },
   },

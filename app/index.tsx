@@ -1,5 +1,6 @@
 import { Redirect } from "expo-router";
 import { useAuth } from "@clerk/expo";
+import WelcomeScreen from "@/components/WelcomeScreen";
 
 export default function Index() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -8,5 +9,5 @@ export default function Index() {
 
   if (isSignedIn) return <Redirect href="/(root)/(tabs)" />;
 
-  return <Redirect href="/sign-in" />;
+  return <WelcomeScreen />;
 }

@@ -1,79 +1,88 @@
-import { useRouter } from "expo-router";
-import { Image, Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Property } from "@/types";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from '@/lib/utils';
+import { Property } from '@/types';
+import { useRouter } from 'expo-router';
+import { ArrowsOutSimple, Bathtub, Bed, ChatCircleDots } from 'phosphor-react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 
-export default function FeaturedCard({ property }: { property: Property }) {
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <View className="flex-row items-center gap-1.5 rounded-full bg-[#f5f5f5] px-3 py-1.5">
+      {children}
+    </View>
+  );
+}
+
+export default function FeaturedCard({
+  property,
+  onContact,
+}: {
+  property: Property;
+  onContact?: () => void; // optional; defaults to opening the property page
+}) {
   const router = useRouter();
+  const openProperty = () => router.push(`/(root)/property/${property.id}`);
 
   return (
-    <TouchableOpacity
-      onPress={() => router.push(`/(root)/property/${property.id}`)}
-      className="w-72 mr-4 rounded-3xl overflow-hidden bg-white"
+    <Pressable
+      onPress={openProperty}
+      className="mr-4 w-72 rounded-[28px] border border-neutral-100 bg-white p-2"
       style={{
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 4,
-        opacity: property.is_sold ? 0.5 : 1,
+        opacity: property.is_sold ? 0.6 : 1,
       }}
     >
-      {/* Image */}
-      <Image
-        source={{ uri: property.images[0] }}
-        className="w-full h-44"
-        resizeMode="cover"
-      />
+      {/* Image with badges */}
+      <View>
+        <Image
+          source={{ uri: property.images[0] }}
+          className="h-44 w-full rounded-[22px] bg-neutral-200"
+          resizeMode="cover"
+        />
 
-      {/* Badge */}
-      <View className="absolute top-3 left-3 bg-white/90 px-3 py-1 rounded-full">
-        <Text className="text-xs font-semibold text-blue-600 capitalize">
-          {property.type}
-        </Text>
-      </View>
-
-      {property.is_sold && (
-        <View className="absolute top-3 right-3 bg-red-500 px-3 py-1 rounded-full">
-          <Text className="text-xs font-semibold text-white">Sold</Text>
-        </View>
-      )}
-
-      {/* Info */}
-      <View className="p-4">
-        <Text
-          className="text-base font-bold text-gray-800 mb-1"
-          numberOfLines={1}
-        >
-          {property.title}
-        </Text>
-
-        <View className="flex-row items-center gap-1 mb-3">
-          <Ionicons name="location-outline" size={13} color="#6B7280" />
-          <Text className="text-xs text-gray-500" numberOfLines={1}>
-            {property.address}, {property.city}
+        <View className="absolute left-3 top-3 rounded-full bg-white/80 px-3 py-1.5">
+          <Text className="font-jakarta-medium text-xs capitalize text-neutral-800">
+            {property.type}
           </Text>
         </View>
 
-        <View className="flex-row items-center justify-between">
-          <Text className="text-blue-600 font-bold text-base">
-            {formatPrice(property.price)}
-          </Text>
-          <View className="flex-row items-center gap-3">
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="bed-outline" size={13} color="#6B7280" />
-              <Text className="text-xs text-gray-500">{property.bedrooms}</Text>
-            </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="water-outline" size={13} color="#6B7280" />
-              <Text className="text-xs text-gray-500">
-                {property.bathrooms}
-              </Text>
-            </View>
+        {property.is_sold && (
+          <View className="absolute right-3 top-3 rounded-full bg-white/80 px-3 py-1.5">
+            <Text className="font-jakarta-medium text-xs text-red-500">Sold</Text>
           </View>
-        </View>
+        )}
       </View>
-    </TouchableOpacity>
+
+      {/* Details */}
+      <View className="px-2 pb-2 pt-3">
+        <View className="flex-row items-center justify-between gap-3">
+          <Text
+            className="flex-1 font-jakarta-semibold text-xl tracking-tight text-neutral-900"
+            numberOfLines={1}
+          >
+            {property.title}
+          </Text>
+        </View>
+
+        {/* Info chips */}
+        <View className="mt-3 flex-row flex-wrap gap-2">
+          <Chip>
+            <Bed size={14} weight="regular" color="#737373" />
+            <Text className="font-jakarta text-xs text-neutral-600">{property.bedrooms} Bed</Text>
+          </Chip>
+          <Chip>
+            <Bathtub size={14} weight="regular" color="#737373" />
+            <Text className="font-jakarta text-xs text-neutral-600">{property.bathrooms} Bath</Text>
+          </Chip>
+          <Chip>
+            <ArrowsOutSimple size={14} weight="regular" color="#737373" />
+            <Text className="font-jakarta text-xs text-neutral-600">{property.area_sqft} Sqft</Text>
+          </Chip>
+        </View>
+
+        <Text className="mt-3 font-jakarta-semibold text-2xl tracking-tighter text-neutral-900">
+          {formatPrice(property.price)}
+        </Text>
+      </View>
+    </Pressable>
   );
 }

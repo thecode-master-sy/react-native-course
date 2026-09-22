@@ -1,19 +1,12 @@
-import { useSupabase } from "@/hooks/useSupabase";
-import { Property } from "@/types";
-import { useAuth } from "@clerk/expo";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
-import PropertyCard from "@/components/PropertyCard";
+import PropertyCard from '@/components/PropertyCard';
+import { useSupabase } from '@/hooks/useSupabase';
+import { Property } from '@/types';
+import { useAuth } from '@clerk/expo';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { Heart } from 'phosphor-react-native';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SavedProperty {
   id: string;
@@ -33,10 +26,10 @@ export default function SavedScreen() {
     if (!userId) return;
     setLoading(true);
     const { data } = await authSupabase
-      .from("saved_properties")
-      .select("id, property_id, properties(*)")
-      .eq("user_clerk_id", userId)
-      .order("id", { ascending: false });
+      .from('saved_properties')
+      .select('id, property_id, properties(*)')
+      .eq('user_clerk_id', userId)
+      .order('id', { ascending: false });
 
     setSaved((data as unknown as SavedProperty[]) ?? []);
     setLoading(false);
@@ -50,56 +43,51 @@ export default function SavedScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-[#f5f5f5]">
       {/* Header */}
-      <View className="px-5 pt-4 pb-3">
-        <Text className="text-2xl font-bold text-gray-900">Saved</Text>
+      <View className="px-5 pb-3 pt-4">
+        <Text className="font-jakarta-bold text-2xl tracking-tighter text-neutral-900">Saved</Text>
         {!loading && (
-          <Text className="text-sm text-gray-400 mt-1">
-            {saved.length} {saved.length === 1 ? "property" : "properties"}{" "}
-            saved
+          <Text className="mt-1 font-jakarta text-sm text-neutral-400">
+            {saved.length} {saved.length === 1 ? 'property' : 'properties'} saved
           </Text>
         )}
       </View>
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size="large" color="#171717" />
         </View>
       ) : (
         <FlatList
           data={saved}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <PropertyCard
               property={item.properties}
-              onUnsave={() =>
-                setSaved((prev) => prev.filter((s) => s.id !== item.id))
-              }
+              onUnsave={() => setSaved(prev => prev.filter(s => s.id !== item.id))}
               showSave
             />
           )}
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center py-24">
-              <View className="w-20 h-20 bg-red-50 rounded-full items-center justify-center mb-4">
-                <Ionicons name="heart-outline" size={36} color="#EF4444" />
+              <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-[#EAFBE3]">
+                <Heart size={36} weight="regular" color="#171717" />
               </View>
-              <Text className="text-gray-700 text-lg font-bold mb-1">
+              <Text className="mb-1 font-jakarta-bold text-lg text-neutral-800">
                 No saved properties
               </Text>
-              <Text className="text-gray-400 text-sm text-center px-8">
+              <Text className="px-8 text-center font-jakarta text-sm text-neutral-400">
                 Tap the heart icon on any property to save it here
               </Text>
-              <TouchableOpacity
-                onPress={() => router.push("/(root)/(tabs)/search")}
-                className="mt-6 bg-blue-600 px-6 py-3 rounded-2xl"
+              <Pressable
+                onPress={() => router.push('/(root)/(tabs)/search')}
+                className="mt-6 rounded-2xl bg-[#8FE07A] px-6 py-3 active:opacity-80"
               >
-                <Text className="text-white font-semibold">
-                  Browse Properties
-                </Text>
-              </TouchableOpacity>
+                <Text className="font-jakarta-semibold text-neutral-900">Browse Properties</Text>
+              </Pressable>
             </View>
           }
         />

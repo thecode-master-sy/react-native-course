@@ -1,23 +1,56 @@
 import { useSignIn } from "@clerk/expo";
+import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Image,
+  KeyboardAvoidingView,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+function BackButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      className="mb-8 h-11 w-11 items-center justify-center rounded-full bg-[#f5f5f5] active:bg-[#ececec]"
+    >
+      <Ionicons name="arrow-back" size={22} color="#171717" />
+    </Pressable>
+  );
+}
 
 export default function SignInScreen() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [code, setCode] = useState("");
+
+  const isLoading = fetchStatus === "fetching";
+
+  const goToWelcome = () => router.replace("/");
+
+  const finalize = async () => {
+    await signIn.finalize({
+      navigate: ({ session, decorateUrl }) => {
+        if (session?.currentTask) {
+          console.log(session?.currentTask);
+          return;
+        }
+        const url = decorateUrl("/");
+        router.replace(url as any);
+      },
+    });
+  };
 
   const onSignInPress = async () => {
     const { error } = await signIn.password({
@@ -29,16 +62,7 @@ export default function SignInScreen() {
     }
 
     if (signIn.status === "complete") {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) {
-            console.log(session?.currentTask);
-            return;
-          }
-          const url = decorateUrl("/");
-          router.replace(url as any);
-        },
-      });
+      await finalize();
     } else if (signIn.status === "needs_second_factor") {
       await signIn.mfa.sendPhoneCode();
     } else if (signIn.status === "needs_client_trust") {
@@ -57,140 +81,175 @@ export default function SignInScreen() {
     await signIn.mfa.verifyEmailCode({ code });
 
     if (signIn.status === "complete") {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) {
-            console.log(session?.currentTask);
-            return;
-          }
-          const url = decorateUrl("/");
-          router.replace(url as any);
-        },
-      });
+      await finalize();
     } else {
       console.error("Sign-in attempt not complete:", signIn);
     }
   };
 
-  const isLoading = fetchStatus === "fetching";
-
+  // Verification step
   if (signIn.status === "needs_client_trust") {
     return (
-      <View className="flex-1 justify-center items-center bg-white px-6">
-        <Image
-          source={require("../../assets/images/kribb.png")}
-          className="w-32 h-16 mb-8"
-          resizeMode="contain"
-        />
-        <Text className="text-2xl font-bold text-gray-800 mb-2">
-          Verify your account
-        </Text>
+      <KeyboardAvoidingView
+        behavior="padding"
+        className="flex-1 bg-white"
+      >
+        <ScrollView
+          className="px-6"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingTop: insets.top + 8,
+            paddingBottom: insets.bottom + 24,
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <BackButton onPress={() => signIn.reset()} />
 
-        <TextInput
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4"
-          placeholder="Enter verification code"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="number-pad"
-          value={code}
-          onChangeText={setCode}
-        />
-        {errors.fields.code && (
-          <Text className="text-red-500 mb-4">
-            {errors.fields.code.message}
+          <View className="flex-1 justify-center pb-16">
+          <Text className="mb-2 font-jakarta-bold text-[26px] tracking-tight text-neutral-900">
+            Verify your account
           </Text>
-        )}
+          <Text className="mb-8 font-jakarta text-sm leading-5 text-neutral-500">
+            Enter the verification code we sent to your email.
+          </Text>
 
-        <TouchableOpacity
-          onPress={onVerifyPress}
-          disabled={isLoading}
-          className="w-full bg-blue-600 py-4 rounded-xl items-center mb-4"
-        >
-          {isLoading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white font-bold text-base">Verify</Text>
+          <TextInput
+            className="h-[52px] w-full rounded-full bg-[#f5f5f5] px-6 font-jakarta text-[14px] text-neutral-900"
+            placeholder="Verification code"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="number-pad"
+            value={code}
+            onChangeText={setCode}
+          />
+          {errors.fields.code && (
+            <Text className="mt-2 px-2 font-jakarta text-xs text-red-500">
+              {errors.fields.code.message}
+            </Text>
           )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => signIn.mfa.sendEmailCode()}
-          className="py-2 mb-2"
-        >
-          <Text className="text-blue-600">I need a new code</Text>
-        </TouchableOpacity>
+          <Pressable
+            onPress={onVerifyPress}
+            disabled={isLoading}
+            className="mt-6 h-[52px] w-full flex-row items-center justify-center rounded-full bg-[#8FE07A] active:opacity-80"
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#171717" />
+            ) : (
+              <Text className="font-jakarta-medium text-[14px] text-neutral-900">
+                Verify
+              </Text>
+            )}
+          </Pressable>
 
-        <TouchableOpacity onPress={() => signIn.reset()} className="py-2">
-          <Text className="text-blue-600">Start over</Text>
-        </TouchableOpacity>
-      </View>
+          <View className="mt-6 items-center gap-3">
+            <Pressable onPress={() => signIn.mfa.sendEmailCode()}>
+              <Text className="font-jakarta-medium text-sm text-neutral-900">
+                I need a new code
+              </Text>
+            </Pressable>
+            <Pressable onPress={() => signIn.reset()}>
+              <Text className="font-jakarta text-sm text-neutral-500">
+                Start over
+              </Text>
+            </Pressable>
+          </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
+  // Sign-in form
   return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
-      className="bg-white"
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      behavior="padding"
+      className="flex-1 bg-white"
     >
-      <View className="flex-1 justify-center px-6 py-12">
-        <Image
-          source={require("../../assets/images/kribb.png")}
-          className="w-36 h-16 mb-8"
-          resizeMode="contain"
-        />
-        <Text className="text-3xl font-bold text-gray-800 mb-2">
+      <ScrollView
+        className="px-6"
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingTop: insets.top + 8,
+          paddingBottom: insets.bottom + 24,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <BackButton onPress={goToWelcome} />
+
+        <View className="flex-1 justify-center pb-16">
+        <Text className="mb-2 font-jakarta-bold text-[26px] tracking-tight text-neutral-900">
           Welcome back
         </Text>
-        <Text className="text-gray-500 mb-8">Sign in to your account</Text>
+        <Text className="mb-8 font-jakarta text-sm leading-5 text-neutral-500">
+          Log in to continue finding your future home.
+        </Text>
 
         <TextInput
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4"
+          className="h-[52px] w-full rounded-full bg-[#f5f5f5] px-6 font-jakarta text-[14px] text-neutral-900"
           placeholder="Email address"
           placeholderTextColor="#9CA3AF"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          autoCorrect={false}
         />
         {errors.fields.identifier && (
-          <Text className="text-red-500 mb-4">
+          <Text className="mt-2 px-2 font-jakarta text-xs text-red-500">
             {errors.fields.identifier.message}
           </Text>
         )}
 
-        <TextInput
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-6"
-          placeholder="Password"
-          placeholderTextColor="#9CA3AF"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View className="mt-3 h-[52px] w-full flex-row items-center rounded-full bg-[#f5f5f5] pl-6 pr-4">
+          <TextInput
+            className="flex-1 font-jakarta text-[14px] text-neutral-900"
+            placeholder="Password"
+            placeholderTextColor="#9CA3AF"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+          />
+          <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color="#737373"
+            />
+          </Pressable>
+        </View>
         {errors.fields.password && (
-          <Text className="text-red-500 mb-4">
+          <Text className="mt-2 px-2 font-jakarta text-xs text-red-500">
             {errors.fields.password.message}
           </Text>
         )}
 
-        <TouchableOpacity
+        <Pressable
           onPress={onSignInPress}
           disabled={isLoading}
-          className="w-full bg-blue-600 py-4 rounded-xl items-center mb-4"
+          className="mt-6 h-[52px] w-full flex-row items-center justify-center rounded-full bg-[#8FE07A] active:opacity-80"
         >
           {isLoading ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color="#171717" />
           ) : (
-            <Text className="text-white font-bold text-base">Sign In</Text>
+            <Text className="font-jakarta-medium text-[14px] text-neutral-900">
+              Log In
+            </Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
+        </View>
 
-        <View className="flex-row justify-center">
-          <Text className="text-gray-500">Don&apos;t have an account? </Text>
-          <Link href="/sign-up">
-            <Text className="text-blue-600 font-semibold">Sign Up</Text>
+        <View className="flex-row items-center justify-center">
+          <Text className="font-jakarta text-sm text-neutral-500">
+            Don&apos;t have an account?{" "}
+          </Text>
+          <Link href="/sign-up" replace>
+            <Text className="font-jakarta-medium text-sm text-neutral-900">
+              Sign Up
+            </Text>
           </Link>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,11 +1,12 @@
 export const formatPrice = (value: number): string => {
-  if (value >= 10000000) {
-    const cr = (value / 10000000).toFixed(1).replace(/\.0$/, "");
-    return `₹${cr}Cr`;
+  const NAIRA = '₦';
+  if (value >= 1_000_000_000) {
+    const b = (value / 1_000_000_000).toFixed(1).replace(/\.0$/, '');
+    return `${NAIRA}${b}B`;
   }
-  if (value >= 100000) {
-    const l = (value / 100000).toFixed(1).replace(/\.0$/, "");
-    return `₹${l}L`;
+  if (value >= 1_000_000) {
+    const m = (value / 1_000_000).toFixed(1).replace(/\.0$/, '');
+    return `${NAIRA}${m}M`;
   }
-  return `₹${value.toLocaleString()}`;
+  return `${NAIRA}${value.toLocaleString('en-NG')}`;
 };
